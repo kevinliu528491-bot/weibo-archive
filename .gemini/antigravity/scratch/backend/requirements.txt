@@ -1,0 +1,7 @@
+requests
+schedule
+fastapi
+uvicorn
+pydantic
+EbookLib
+reportlab

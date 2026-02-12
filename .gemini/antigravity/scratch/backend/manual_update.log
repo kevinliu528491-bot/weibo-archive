@@ -1,0 +1,44 @@
+Script starting...
+/Users/gegao/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Starting scrape for user 1644724561 (Last 7 days)...
+Fetching page 1...
+Exception fetching posts: Expecting value: line 1 column 1 (char 0)
+Traceback (most recent call last):
+  File "/Users/gegao/.gemini/antigravity/scratch/backend/scraper.py", line 327, in <module>
+    run_scraper(UID, COOKIE, days_back=DAYS)
+  File "/Users/gegao/.gemini/antigravity/scratch/backend/scraper.py", line 316, in run_scraper
+    export_to_excel()
+  File "/Users/gegao/.gemini/antigravity/scratch/backend/scraper.py", line 276, in export_to_excel
+    comments_df.to_excel(writer, sheet_name="Comments", index=False)
+  File "/Users/gegao/Library/Python/3.9/lib/python/site-packages/pandas/io/excel/_base.py", line 1353, in __exit__
+    self.close()
+  File "/Users/gegao/Library/Python/3.9/lib/python/site-packages/pandas/io/excel/_base.py", line 1357, in close
+    self._save()
+  File "/Users/gegao/Library/Python/3.9/lib/python/site-packages/pandas/io/excel/_openpyxl.py", line 110, in _save
+    self.book.save(self._handles.handle)
+  File "/Users/gegao/Library/Python/3.9/lib/python/site-packages/openpyxl/workbook/workbook.py", line 386, in save
+    save_workbook(self, filename)
+  File "/Users/gegao/Library/Python/3.9/lib/python/site-packages/openpyxl/writer/excel.py", line 294, in save_workbook
+    writer.save()
+  File "/Users/gegao/Library/Python/3.9/lib/python/site-packages/openpyxl/writer/excel.py", line 275, in save
+    self.write_data()
+  File "/Users/gegao/Library/Python/3.9/lib/python/site-packages/openpyxl/writer/excel.py", line 77, in write_data
+    self._write_worksheets()
+  File "/Users/gegao/Library/Python/3.9/lib/python/site-packages/openpyxl/writer/excel.py", line 215, in _write_worksheets
+    self.write_worksheet(ws)
+  File "/Users/gegao/Library/Python/3.9/lib/python/site-packages/openpyxl/writer/excel.py", line 200, in write_worksheet
+    writer.write()
+  File "/Users/gegao/Library/Python/3.9/lib/python/site-packages/openpyxl/worksheet/_writer.py", line 359, in write
+    self.write_rows()
+  File "/Users/gegao/Library/Python/3.9/lib/python/site-packages/openpyxl/worksheet/_writer.py", line 125, in write_rows
+    self.write_row(xf, row, row_idx)
+  File "/Users/gegao/Library/Python/3.9/lib/python/site-packages/openpyxl/worksheet/_writer.py", line 135, in write_row
+    with xf.element("row", attrs):
+  File "/Library/Developer/CommandLineTools/Library/Frameworks/Python3.framework/Versions/3.9/lib/python3.9/contextlib.py", line 117, in __enter__
+    return next(self.gen)
+  File "/Users/gegao/Library/Python/3.9/lib/python/site-packages/et_xmlfile/xmlfile.py", line 68, in element
+    ) = incremental_tree.write_elem_start(
+  File "/Users/gegao/Library/Python/3.9/lib/python/site-packages/et_xmlfile/incremental_tree.py", line 420, in write_elem_start
+    elif tag is ET.ProcessingInstruction:
+KeyboardInterrupt

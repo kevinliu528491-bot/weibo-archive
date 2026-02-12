@@ -1,0 +1,80 @@
+Script starting...
+/Users/gegao/Library/Python/3.9/lib/python/site-packages/urllib3/__init__.py:35: NotOpenSSLWarning: urllib3 v2 only supports OpenSSL 1.1.1+, currently the 'ssl' module is compiled with 'LibreSSL 2.8.3'. See: https://github.com/urllib3/urllib3/issues/3020
+  warnings.warn(
+Starting scrape for user 1644724561 (Last 3 days)...
+Fetching page 1...
+Success! Found 12 cards on page 1.
+Processing post 5238662649351600 (Sun Nov 30 12:46:08 +0800 2025)...
+Saved reply for comment 5238663504203149
+Saved reply for comment 5238687731287388
+Saved reply for comment 5238676883767594
+Saved reply for comment 5238668861377027
+Saved reply for comment 5238777955222234
+Saved reply for comment 5238683011909387
+Saved reply for comment 5238742601175471
+Saved reply for comment 5238667992893190
+Saved reply for comment 5238761797719243
+Saved reply for comment 5238674715578724
+Saved reply for comment 5238707049202351
+Processing post 5239681832453118 (Wed Dec 03 08:16:00 +0800 2025)...
+Processing post 5239486709762689 (Tue Dec 02 19:20:39 +0800 2025)...
+Saved reply for comment 5239490683865940
+Saved reply for comment 5239495412945167
+Saved reply for comment 5239486994974368
+Saved reply for comment 5239492148724699
+Saved reply for comment 5239696138439730
+Saved reply for comment 5239495834470728
+Saved reply for comment 5239491243805454
+Processing post 5239370640262003 (Tue Dec 02 11:39:26 +0800 2025)...
+Saved reply for comment 5239372794562267
+Saved reply for comment 5239371418831615
+Saved reply for comment 5239373516767618
+Saved reply for comment 5239378389500671
+Saved reply for comment 5239405820511254
+Saved reply for comment 5239401023278723
+Saved reply for comment 5239371236380205
+Saved reply for comment 5239442868801570
+Saved reply for comment 5239372469240038
+Saved reply for comment 5239377723919202
+Saved reply for comment 5239378654794494
+Saved reply for comment 5239372311957297
+Saved reply for comment 5239372787747004
+Processing post 5239359340547755 (Tue Dec 02 10:54:32 +0800 2025)...
+Saved reply for comment 5239397466248027
+Processing post 5239319444586957 (Tue Dec 02 08:16:00 +0800 2025)...
+Saved reply for comment 5239353987039593
+Processing post 5239124426230665 (Mon Dec 01 19:21:04 +0800 2025)...
+Saved reply for comment 5239126712649744
+Saved reply for comment 5239129212191309
+Saved reply for comment 5239125940900915
+Saved reply for comment 5239371613341882
+Saved reply for comment 5239464976713683
+Saved reply for comment 5239354910050705
+Processing post 5239000740921521 (Mon Dec 01 11:09:34 +0800 2025)...
+Saved reply for comment 5239053621921424
+Saved reply for comment 5239001067555447
+Saved reply for comment 5239036314913233
+Saved reply for comment 5239007953029025
+Saved reply for comment 5239079457261825
+Saved reply for comment 5239040611978277
+Processing post 5238994421942946 (Mon Dec 01 10:44:29 +0800 2025)...
+Saved reply for comment 5238994889872199
+Saved reply for comment 5238995477071378
+Saved reply for comment 5239489946715194
+Saved reply for comment 5239173850337504
+Processing post 5238985758081163 (Mon Dec 01 10:10:02 +0800 2025)...
+Saved reply for comment 5238998488320055
+Saved reply for comment 5238986962637044
+Saved reply for comment 5238995618890475
+Saved reply for comment 5239078447745370
+Saved reply for comment 5238995034573683
+Saved reply for comment 5238986836804255
+Saved reply for comment 5239141772036409
+Saved reply for comment 5238986498901762
+Saved reply for comment 5238986622895016
+Processing post 5238955546774690 (Mon Dec 01 08:10:00 +0800 2025)...
+Saved reply for comment 5238965498021943
+Fetching page 2...
+Success! Found 9 cards on page 2.
+Found post older than 3 days (Sun Nov 30 09:26:28 +0800 2025). Stopping.
+Exported data to weibo_history.xlsx

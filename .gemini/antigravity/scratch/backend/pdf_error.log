@@ -1,0 +1,65 @@
+Fetching posts...
+Traceback (most recent call last):
+  File "/opt/anaconda3/lib/python3.12/site-packages/reportlab/platypus/paraparser.py", line 3218, in parse
+    self.feed(text)
+  File "/opt/anaconda3/lib/python3.12/html/parser.py", line 111, in feed
+    self.goahead(0)
+  File "/opt/anaconda3/lib/python3.12/html/parser.py", line 171, in goahead
+    k = self.parse_starttag(i)
+        ^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/html/parser.py", line 338, in parse_starttag
+    self.handle_starttag(tag, attrs)
+  File "/opt/anaconda3/lib/python3.12/site-packages/reportlab/platypus/paraparser.py", line 3241, in handle_starttag
+    start(attrs or {})
+  File "/opt/anaconda3/lib/python3.12/site-packages/reportlab/platypus/paraparser.py", line 2687, in start_a
+    self._handle_link('a',attributes)
+  File "/opt/anaconda3/lib/python3.12/site-packages/reportlab/platypus/paraparser.py", line 2654, in _handle_link
+    A = self.getAttributes(attributes,_linkAttrMap)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/reportlab/platypus/paraparser.py", line 3081, in getAttributes
+    self._syntax_error('invalid attribute name %s attrMap=%r'% (k,list(sorted(attrMap.keys()))))
+  File "/opt/anaconda3/lib/python3.12/site-packages/reportlab/platypus/paraparser.py", line 2780, in _syntax_error
+    raise ValueError('paraparser: syntax error: %s' % message)
+ValueError: paraparser: syntax error: invalid attribute name data-hide attrMap=['backColor', 'backcolor', 'bgcolor', 'color', 'dest', 'destination', 'face', 'fg', 'fontName', 'fontSize', 'fontname', 'fontsize', 'href', 'link', 'name', 'size', 'target', 'textColor', 'textcolor', 'ucolor', 'ugap', 'ukind', 'underline', 'underlineColor', 'underlineGap', 'underlineKind', 'underlineOffset', 'underlineWidth', 'underlinecolor', 'underlinegap', 'underlinekind', 'underlineoffset', 'underlinewidth', 'uoffset', 'uwidth']
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/Users/gegao/.gemini/antigravity/scratch/backend/export_pdf.py", line 171, in <module>
+    create_pdf()
+  File "/Users/gegao/.gemini/antigravity/scratch/backend/export_pdf.py", line 127, in create_pdf
+    story.append(Paragraph(formatted_text, body_style))
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/reportlab/platypus/paragraph.py", line 1859, in __init__
+    self._setup(text, style, bulletText or getattr(style,'bulletText',None), frags, cleanBlockQuotedText)
+  File "/opt/anaconda3/lib/python3.12/site-packages/reportlab/platypus/paragraph.py", line 1880, in _setup
+    style, frags, bulletTextFrags = _parser.parse(text,style)
+                                    ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/reportlab/platypus/paraparser.py", line 3220, in parse
+    annotateException('\nparagraph text %s caused exception' % ascii(text))
+  File "/opt/anaconda3/lib/python3.12/site-packages/reportlab/lib/utils.py", line 1176, in annotateException
+    rl_reraise(t,t(sep.join((_ for _ in (msg,str(v),postMsg) if _))),b)
+  File "/opt/anaconda3/lib/python3.12/site-packages/reportlab/lib/utils.py", line 138, in rl_reraise
+    raise v.with_traceback(b)
+  File "/opt/anaconda3/lib/python3.12/site-packages/reportlab/platypus/paraparser.py", line 3218, in parse
+    self.feed(text)
+  File "/opt/anaconda3/lib/python3.12/html/parser.py", line 111, in feed
+    self.goahead(0)
+  File "/opt/anaconda3/lib/python3.12/html/parser.py", line 171, in goahead
+    k = self.parse_starttag(i)
+        ^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/html/parser.py", line 338, in parse_starttag
+    self.handle_starttag(tag, attrs)
+  File "/opt/anaconda3/lib/python3.12/site-packages/reportlab/platypus/paraparser.py", line 3241, in handle_starttag
+    start(attrs or {})
+  File "/opt/anaconda3/lib/python3.12/site-packages/reportlab/platypus/paraparser.py", line 2687, in start_a
+    self._handle_link('a',attributes)
+  File "/opt/anaconda3/lib/python3.12/site-packages/reportlab/platypus/paraparser.py", line 2654, in _handle_link
+    A = self.getAttributes(attributes,_linkAttrMap)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/opt/anaconda3/lib/python3.12/site-packages/reportlab/platypus/paraparser.py", line 3081, in getAttributes
+    self._syntax_error('invalid attribute name %s attrMap=%r'% (k,list(sorted(attrMap.keys()))))
+  File "/opt/anaconda3/lib/python3.12/site-packages/reportlab/platypus/paraparser.py", line 2780, in _syntax_error
+    raise ValueError('paraparser: syntax error: %s' % message)
+ValueError: 
+paragraph text '<para><a href="https://m.weibo.cn/search?containerid=231522type%3D1%26t%3D10%26q%3D%23%E7%99%BD%E9%93%B6%23&isnewpage=1&launchid=10000360-page_H5" data-hide=""><span class="surl-text">#\u767d\u94f6#</span></a> &quot;\u767d\u94f6\u56fa\u6001\u7535\u6c60\uff0c9\u5206\u949f\u5145\u6ee1\u80fd\u8dd11000\u516c\u91cc\uff0c20\u5e74\u5bff\u547d\u3002\u6bcf\u4e2a\u7535\u6c60\u5355\u5143\u9700\u89815\u514b\u767d\u94f6\u30022026\u7528\u4e8e\u624b\u673a\uff0c2027-2030\u5e74\u7528\u4e8e\u6c7d\u8f66\uff0c\u6bcf\u8f86\u8f66\u9700\u89811\u516c\u65a4\u767d\u94f6\u3002&quot;\u8fd9\u4e2a\u8bf4\u6cd5\u662f\u771f\u7684\u5417\uff1f\u5404\u5bb6\u8981\u62a2\u767d\u94f6\u4e86\u5417\uff1f\u5f53\u4e00\u4e2a\u6295\u8d44\u54c1\u4ef7\u683c\u9ad8\u6da8\u7684\u65f6\u5019\uff0c\u5404\u79cd\u597d\u6d88\u606f\u63a5\u8e35\u800c\u6765\u3002</para>' caused exception paraparser: syntax error: invalid attribute name data-hide attrMap=['backColor', 'backcolor', 'bgcolor', 'color', 'dest', 'destination', 'face', 'fg', 'fontName', 'fontSize', 'fontname', 'fontsize', 'href', 'link', 'name', 'size', 'target', 'textColor', 'textcolor', 'ucolor', 'ugap', 'ukind', 'underline', 'underlineColor', 'underlineGap', 'underlineKind', 'underlineOffset', 'underlineWidth', 'underlinecolor', 'underlinegap', 'underlinekind', 'underlineoffset', 'underlinewidth', 'uoffset', 'uwidth']

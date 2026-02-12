@@ -1,0 +1,85 @@
+Script starting...
+Starting scrape for user 1644724561 (Last 5 days)...
+Fetching page 1...
+Success! Found 12 cards on page 1.
+Found post older than 5 days (Sun Nov 30 12:46:08 +0800 2025). Consecutive count: 1
+Processing post 5252010253224380 (Tue Jan 06 08:44:45 +0800 2026)...
+Processing post 5251760383333126 (Mon Jan 05 16:11:51 +0800 2026)...
+Processing post 5251685878338189 (Mon Jan 05 11:15:48 +0800 2026)...
+Processing post 5251677289973342 (Mon Jan 05 10:41:40 +0800 2026)...
+Saved reply for comment 5251677852009580
+Saved reply for comment 5251685572152991
+Saved reply for comment 5251682490650969
+Saved reply for comment 5251678150593178
+Processing post 5251656103234486 (Mon Jan 05 09:17:29 +0800 2026)...
+Saved reply for comment 5251657651716976
+Saved reply for comment 5251660642781127
+Saved reply for comment 5251794521295843
+Saved reply for comment 5251669095089501
+Saved reply for comment 5251661619791111
+Processing post 5251641139527739 (Mon Jan 05 08:18:00 +0800 2026)...
+Processing post 5251365816505057 (Sun Jan 04 14:03:59 +0800 2026)...
+Saved reply for comment 5251396863789811
+Processing post 5251311130123625 (Sun Jan 04 10:26:41 +0800 2026)...
+Saved reply for comment 5251325157706455
+Saved reply for comment 5251321760580730
+Saved reply for comment 5251343786706643
+Processing post 5251287482371506 (Sun Jan 04 08:52:43 +0800 2026)...
+Saved reply for comment 5251288124360513
+Saved reply for comment 5251287683957991
+Saved reply for comment 5251290931135356
+Saved reply for comment 5251470947784324
+Saved reply for comment 5251345330474909
+Saved reply for comment 5251290034078734
+Saved reply for comment 5251346506976025
+Saved reply for comment 5251304691864406
+Processing post 5251282488001163 (Sun Jan 04 08:32:51 +0800 2026)...
+Fetching page 2...
+Success! Found 10 cards on page 2.
+Processing post 5251025529211591 (Sat Jan 03 15:31:48 +0800 2026)...
+Saved reply for comment 5251073744831870
+Saved reply for comment 5251025797907566
+Saved reply for comment 5251073519393950
+Saved reply for comment 5251086514653753
+Processing post 5250951498962509 (Sat Jan 03 10:37:38 +0800 2026)...
+Saved reply for comment 5250957615041739
+Processing post 5250944711263705 (Sat Jan 03 10:10:40 +0800 2026)...
+Saved reply for comment 5250945323633458
+Saved reply for comment 5251066790678166
+Saved reply for comment 5250946221478803
+Processing post 5250599002312132 (Fri Jan 02 11:16:56 +0800 2026)...
+Saved reply for comment 5250599440362763
+Saved reply for comment 5250600120090729
+Saved reply for comment 5250601023702799
+Saved reply for comment 5250607789118068
+Saved reply for comment 5250601101296242
+Saved reply for comment 5250678722658890
+Saved reply for comment 5250634145073725
+Processing post 5250585064112325 (Fri Jan 02 10:21:32 +0800 2026)...
+Saved reply for comment 5250586893353559
+Saved reply for comment 5250591099978981
+Processing post 5250554222610634 (Fri Jan 02 08:19:00 +0800 2026)...
+Processing post 5250380732564451 (Thu Jan 01 20:49:37 +0800 2026)...
+Saved reply for comment 5250393703451118
+Processing post 5250227956352062 (Thu Jan 01 10:42:32 +0800 2026)...
+Saved reply for comment 5250237364443250
+Saved reply for comment 5250613841758286
+Saved reply for comment 5250231416914119
+Saved reply for comment 5250231199596625
+Saved reply for comment 5250264207459910
+Saved reply for comment 5250636132124821
+Saved reply for comment 5250230287073753
+Processing post 5250222176600096 (Thu Jan 01 10:19:33 +0800 2026)...
+Saved reply for comment 5250229583483715
+Saved reply for comment 5250261736231306
+Saved reply for comment 5250279779864014
+Processing post 5250216594768626 (Thu Jan 01 09:57:23 +0800 2026)...
+Fetching page 3...
+Success! Found 10 cards on page 3.
+Found post older than 5 days (Thu Jan 01 08:27:00 +0800 2026). Consecutive count: 1
+Found post older than 5 days (Wed Dec 31 09:53:10 +0800 2025). Consecutive count: 2
+Found post older than 5 days (Wed Dec 31 09:27:39 +0800 2025). Consecutive count: 3
+Found post older than 5 days (Wed Dec 31 08:29:00 +0800 2025). Consecutive count: 4
+Found post older than 5 days (Tue Dec 30 15:12:39 +0800 2025). Consecutive count: 5
+Reached 5 consecutive old posts. Stopping.
+Exported data to weibo_history.xlsx

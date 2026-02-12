@@ -1,0 +1,11 @@
+backend/weibo_archive.pdf
+weibo_data.db
+*.log
+env_vars*.sh
+backend/weibo_data.db
+backend/weibo_history.xlsx
+backend/weibo_posts.epub
+output*.txt
+output*.log
+manual_update*.log
+server_output*.log

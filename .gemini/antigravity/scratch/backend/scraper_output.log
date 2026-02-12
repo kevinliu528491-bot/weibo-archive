@@ -1,0 +1,17 @@
+Script starting...
+Starting scrape for user 1644724561 (Last 1 days)...
+Fetching page 1...
+Success! Found 12 cards on page 1.
+Found post older than 1 days (Sun Nov 30 12:46:08 +0800 2025). Consecutive count: 1
+Processing post 5253502932617520 (Sat Jan 10 11:36:07 +0800 2026)...
+Saved reply for comment 5253503400284735
+Saved reply for comment 5253518659420344
+Saved reply for comment 5253506627274045
+Saved reply for comment 5253503968872259
+Traceback (most recent call last):
+  File "/Users/gegao/.gemini/antigravity/scratch/backend/scraper.py", line 334, in <module>
+    run_scraper(UID, COOKIE, days_back=DAYS)
+  File "/Users/gegao/.gemini/antigravity/scratch/backend/scraper.py", line 318, in run_scraper
+    time.sleep(1) 
+    ^^^^^^^^^^^^^
+KeyboardInterrupt
