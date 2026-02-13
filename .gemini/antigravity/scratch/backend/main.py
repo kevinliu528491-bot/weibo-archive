@@ -14,10 +14,14 @@ app = FastAPI(title="Weibo Scraper API")
 # Mount static files
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
-app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
-# Serve index.html at root
-from fastapi.responses import FileResponse
+# API routes must act first
+# ... (API routes are defined below, but we must ensure static mount doesn't shadow them if we mount at root)
+
+# Instead of specific file routes, let's mount /images explicitly
+app.mount("/images", StaticFiles(directory=os.path.join(STATIC_DIR, "images")), name="images")
+
+# Serve specific files for the SPA/Frontend
 @app.get("/")
 async def read_index():
     return FileResponse(os.path.join(STATIC_DIR, 'index.html'))
@@ -38,10 +42,9 @@ async def read_stats_json():
 async def read_posts_json():
     return FileResponse(os.path.join(STATIC_DIR, 'posts.json'))
 
-# Mount images at /images to match relative paths in posts.json
-images_dir = os.path.join(STATIC_DIR, "images")
-if os.path.exists(images_dir):
-    app.mount("/images", StaticFiles(directory=images_dir), name="images")
+# Fallback/Root mount for other static assets if needed, but the above covers most.
+# Removing the generic /static mount to avoid confusion or keep it at /static
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 # Enable CORS for development (optional if serving from same origin)
 app.add_middleware(
@@ -79,6 +82,22 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+import hashlib
+
+def get_image_filename(url):
+    """Generate a unique filename for the image based on its URL."""
+    if not url:
+        return None
+    try:
+        ext = os.path.splitext(url)[1].split('?')[0] # Get extension
+        if not ext:
+            ext = ".jpg" # Default
+    except:
+        ext = ".jpg"
+        
+    hash_obj = hashlib.md5(url.encode())
+    return f"{hash_obj.hexdigest()}{ext}"
+
 @app.get("/api/posts", response_model=List[Post])
 def get_posts():
     conn = get_db_connection()
@@ -90,9 +109,20 @@ def get_posts():
         p = dict(post)
         # Parse images JSON
         try:
-            p['images'] = json.loads(p['images']) if p['images'] else []
+            images = json.loads(p['images']) if p['images'] else []
         except:
-            p['images'] = []
+            images = []
+        
+        # Transform to local paths
+        local_images = []
+        for url in images:
+            filename = get_image_filename(url)
+            # Check if file exists? Optimistically return local path
+            # The client will try to load it. If it doesn't exist, it 404s.
+            # But effectively we are simulating what export_static does.
+            local_images.append(f"images/{filename}")
+            
+        p['images'] = local_images
         results.append(p)
         
     return results
