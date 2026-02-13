@@ -1,4 +1,4 @@
-const API_BASE = '/api';
+const API_BASE = '/api/';
 const STATIC_BASE = '.'; // Relative path for current directory
 
 /* 
@@ -59,7 +59,7 @@ async function renderPosts() {
             let comments = post.comments || [];
             if (!post.comments) {
                 try {
-                    const comRes = await fetch(`${API_BASE}/posts/${post.id}/comments`);
+                    const comRes = await fetch(`${API_BASE}posts/${post.id}/comments`);
                     if (comRes.ok) {
                         comments = await comRes.json();
                     }
