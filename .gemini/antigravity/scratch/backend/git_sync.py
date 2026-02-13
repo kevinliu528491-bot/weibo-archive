@@ -47,7 +47,7 @@ def sync_content():
         # Construct the command. If it's a wildcard, let the shell expand it or git handle it.
         # But subprocess doesn't expand wildcards by default without shell=True.
         # Safer to use git's wildcard handling.
-        cmd = ["git", "add", path]
+        cmd = ["git", "add", "-f", path]
         run_git_command(cmd, cwd=base_dir)
         
     # 2. Commit
