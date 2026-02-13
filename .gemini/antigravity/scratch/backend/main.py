@@ -22,6 +22,27 @@ from fastapi.responses import FileResponse
 async def read_index():
     return FileResponse(os.path.join(STATIC_DIR, 'index.html'))
 
+@app.get("/app.js")
+async def read_js():
+    return FileResponse(os.path.join(STATIC_DIR, 'app.js'))
+
+@app.get("/style.css")
+async def read_css():
+    return FileResponse(os.path.join(STATIC_DIR, 'style.css'))
+
+@app.get("/stats.json")
+async def read_stats_json():
+    return FileResponse(os.path.join(STATIC_DIR, 'stats.json'))
+
+@app.get("/posts.json")
+async def read_posts_json():
+    return FileResponse(os.path.join(STATIC_DIR, 'posts.json'))
+
+# Mount images at /images to match relative paths in posts.json
+images_dir = os.path.join(STATIC_DIR, "images")
+if os.path.exists(images_dir):
+    app.mount("/images", StaticFiles(directory=images_dir), name="images")
+
 # Enable CORS for development (optional if serving from same origin)
 app.add_middleware(
     CORSMiddleware,
