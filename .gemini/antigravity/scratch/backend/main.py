@@ -96,6 +96,7 @@ import schedule
 import time
 from scraper import run_scraper
 from git_sync import sync_content
+from export_static import export_stats, export_posts
 
 # Scheduler configuration
 def run_schedule():
@@ -109,6 +110,9 @@ def run_schedule():
     print("Scheduler: Running initial scrape...", file=sys.stderr)
     try:
         run_scraper(uid, cookie)
+        print("Scheduler: Exporting static files...", file=sys.stderr)
+        export_stats()
+        export_posts()
         sync_content()  # Sync after initial scrape
     except Exception as e:
         print(f"Scheduler: Initial scrape failed: {e}", file=sys.stderr)
@@ -116,6 +120,9 @@ def run_schedule():
     # Schedule daily run (e.g., at 10:00 AM or just every 24h)
     def run_wrapper():
         run_scraper(uid=uid, cookie=cookie, days_back=3)
+        print("Scheduler: Exporting static files...", file=sys.stderr)
+        export_stats()
+        export_posts()
         sync_content()
 
     schedule.every().day.at("12:00").do(run_wrapper)
