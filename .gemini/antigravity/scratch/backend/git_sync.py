@@ -58,20 +58,37 @@ def sync_content():
     status_cmd = ["git", "status", "--porcelain"]
     try:
         result = subprocess.run(status_cmd, cwd=base_dir, capture_output=True, text=True)
-        if not result.stdout.strip():
-            print("No changes to commit.")
-            return
+        if result.stdout.strip():
+             run_git_command(["git", "commit", "-m", commit_msg], cwd=base_dir)
+        else:
+             print("No changes to commit.")
     except Exception as e:
         print(f"Error checking status: {e}")
-        return
 
-    run_git_command(["git", "commit", "-m", commit_msg], cwd=base_dir)
-    
     # 3. Pull --rebase (to avoid conflicts)
-    run_git_command(["git", "pull", "--rebase"], cwd=base_dir)
+    # Get current branch
+    try:
+        branch_result = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+            cwd=base_dir,
+            check=True,
+            capture_output=True,
+            text=True
+        )
+        current_branch = branch_result.stdout.strip()
+    except:
+        current_branch = "main" # Fallback
+
+    # Try simple pull first
+    if not run_git_command(["git", "pull", "--rebase"], cwd=base_dir):
+        print("Pull failed, possibly no upstream. Continuing to push...")
     
     # 4. Push
-    run_git_command(["git", "push"], cwd=base_dir)
+    # Try simple push
+    if not run_git_command(["git", "push"], cwd=base_dir):
+        print(f"Simple push failed. Trying to set upstream for {current_branch}...")
+        run_git_command(["git", "push", "--set-upstream", "origin", current_branch], cwd=base_dir)
+    
     print("GitHub sync completed.")
 
 if __name__ == "__main__":

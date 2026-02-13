@@ -95,6 +95,7 @@ import threading
 import schedule
 import time
 from scraper import run_scraper
+from git_sync import sync_content
 
 # Scheduler configuration
 def run_schedule():
@@ -108,14 +109,19 @@ def run_schedule():
     print("Scheduler: Running initial scrape...", file=sys.stderr)
     try:
         run_scraper(uid, cookie)
+        sync_content()  # Sync after initial scrape
     except Exception as e:
         print(f"Scheduler: Initial scrape failed: {e}", file=sys.stderr)
 
     # Schedule daily run (e.g., at 10:00 AM or just every 24h)
-    schedule.every().day.at("12:00").do(run_scraper, uid=uid, cookie=cookie, days_back=3)
-    schedule.every().day.at("22:00").do(run_scraper, uid=uid, cookie=cookie, days_back=3)
+    def run_wrapper():
+        run_scraper(uid=uid, cookie=cookie, days_back=3)
+        sync_content()
+
+    schedule.every().day.at("12:00").do(run_wrapper)
+    schedule.every().day.at("22:00").do(run_wrapper)
     
-    print("Scheduler: Started. Running daily at 12:00 and 22:00.", file=sys.stderr)
+    print("Scheduler: Started. Running daily at 12:00 and 22:00 with GitHub sync.", file=sys.stderr)
     while True:
         try:
             schedule.run_pending()
