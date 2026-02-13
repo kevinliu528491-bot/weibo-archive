@@ -94,11 +94,12 @@ def export_posts():
     posts = [dict(row) for row in cursor.fetchall()]
     
     # For each post, parse images JSON and fetch comments
-    # For each post, parse images JSON and fetch comments
-    for i, post in enumerate(posts):
-        print(f"Processing post {i+1}/{len(posts)}...", end="\r")
-        
-        # Parse images if it's a string
+    # Prepare list of all image URLs to download first
+    all_image_jobs = []
+    
+    print("Preparing image download jobs...", end="\r")
+    for post in posts:
+        # Parse images
         if isinstance(post.get("images"), str):
             try:
                 img_list = json.loads(post["images"])
@@ -106,16 +107,61 @@ def export_posts():
                 img_list = []
         else:
             img_list = post.get("images", [])
-            
-        # Download images and replace with local paths
-        local_images = []
+        
+        post["_image_urls"] = img_list # Temp storage
         if img_list:
-            for img_url in img_list:
-                local_path = download_image(img_url)
-                if local_path:
-                    local_images.append(local_path)
-        post["images"] = local_images
+            for url in img_list:
+                all_image_jobs.append(url)
                 
+    # Download images in parallel
+    print(f"\nDownloading {len(all_image_jobs)} images with 10 threads...")
+    from concurrent.futures import ThreadPoolExecutor
+    
+    url_map = {} # url -> local_path
+    
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        # Submit all jobs
+        future_to_url = {executor.submit(download_image, url): url for url in set(all_image_jobs)}
+        
+        # Process results
+        total = len(future_to_url)
+        done = 0
+        for future in  list(future_to_url.keys()): # Iterate over futures
+            try:
+                # We want to process as they complete, but basic iteration is fine for progress
+                pass
+            except:
+                pass
+        
+        # Better: use as_completed
+        from concurrent.futures import as_completed
+        for future in as_completed(future_to_url):
+            done += 1
+            url = future_to_url[future]
+            try:
+                local_path = future.result()
+                if local_path:
+                    url_map[url] = local_path
+            except Exception as e:
+                print(f"Error downloading {url}: {e}")
+            print(f"Progress: {done}/{total}", end="\r")
+            
+    print("\nImage download complete. Updating posts...")
+
+    # Update posts with local paths
+    for i, post in enumerate(posts):
+        img_list = post.pop("_image_urls", []) # Retrieve and remove temp
+        if img_list is None:
+            img_list = []
+            
+        local_images = []
+        for url in img_list:
+             if url in url_map:
+                 local_images.append(url_map[url])
+             else:
+                 local_images.append(url) 
+        post["images"] = local_images
+        
         # Fetch comments for this post
         cursor.execute("SELECT * FROM comments WHERE post_id = ? ORDER BY id ASC", (post["id"],))
         comments = [dict(row) for row in cursor.fetchall()]
