@@ -8,6 +8,7 @@ from pydantic import BaseModel
 from typing import List, Optional
 
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 app = FastAPI(title="Weibo Scraper API")
 
