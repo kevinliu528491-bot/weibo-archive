@@ -89,6 +89,46 @@ def sync_content():
         print(f"Simple push failed. Trying to set upstream for {current_branch}...")
         run_git_command(["git", "push", "--set-upstream", "origin", current_branch], cwd=base_dir)
     
+    # 5. Push to gh-pages (Deploy static site)
+    print("Deploying to gh-pages...")
+    try:
+        # Find repo root
+        root_res = subprocess.run(
+            ["git", "rev-parse", "--show-toplevel"],
+            cwd=base_dir,
+            check=True,
+            capture_output=True,
+            text=True
+        )
+        repo_root = root_res.stdout.strip()
+        
+        # Calculate relative path to static dir
+        static_dir = os.path.join(base_dir, "static")
+        rel_path = os.path.relpath(static_dir, repo_root)
+        
+        # We need to run git subtree from the repo root
+        # Start with a split to get the hash (safer/faster than push sometimes)
+        split_cmd = ["git", "subtree", "split", "--prefix", rel_path, "main"]
+        split_res = subprocess.run(
+            split_cmd,
+            cwd=repo_root,
+            check=True,
+            capture_output=True,
+            text=True
+        )
+        commit_hash = split_res.stdout.strip()
+        
+        if commit_hash:
+            print(f"Subtree split successful: {commit_hash}")
+            # Force push to gh-pages
+            push_cmd = ["git", "push", "origin", f"{commit_hash}:gh-pages", "--force"]
+            run_git_command(push_cmd, cwd=repo_root)
+        else:
+            print("Failed to split subtree: No hash returned.")
+            
+    except Exception as e:
+        print(f"Error deploying to gh-pages: {e}")
+
     print("GitHub sync completed.")
 
 if __name__ == "__main__":
