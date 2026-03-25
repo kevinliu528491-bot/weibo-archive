@@ -125,7 +125,11 @@ def get_posts(uid, container_id, cookie, page=1):
             print(f"Success! Found {len(cards)} cards on page {page}.", file=sys.stderr)
             return cards
         else:
+            msg = data.get("msg", "")
             print(f"Error fetching posts page {page}: {data}", file=sys.stderr)
+            # Detect common auth-failure signals
+            if "请先登录" in msg or "login" in msg.lower() or data.get("ok") == -100:
+                return "cookie_expired"
             return []
     except Exception as e:
         print(f"Exception fetching posts: {e}", file=sys.stderr)
@@ -302,6 +306,9 @@ def run_scraper(uid, cookie, days_back=1):
     
     while keep_scraping:
         cards = get_posts(uid, container_id, cookie, page)
+        if cards == "cookie_expired":
+            print("Cookie expired! Cannot scrape.", file=sys.stderr)
+            return "cookie_expired"
         if not cards:
             break
             
@@ -340,6 +347,7 @@ def run_scraper(uid, cookie, days_back=1):
         time.sleep(2)
 
     export_to_excel()
+    return "ok"
 
 if __name__ == "__main__":
     # Load config from env or args

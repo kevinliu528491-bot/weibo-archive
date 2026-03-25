@@ -131,3 +131,91 @@ function renderComment(comment) {
 // Init
 fetchStats();
 renderPosts();
+
+// ── Cookie management ────────────────────────────
+async function checkCookieStatus() {
+    const dot = document.getElementById('cookie-dot');
+    const msg = document.getElementById('cookie-msg');
+    try {
+        const res = await fetch('/api/cookie-status');
+        if (!res.ok) return;
+        const data = await res.json();
+
+        dot.className = 'cookie-dot ' + (data.status === 'ok' ? 'ok' : data.status === 'expired' ? 'expired' : '');
+
+        if (data.status === 'ok') {
+            msg.textContent = 'Cookie active';
+        } else if (data.status === 'expired') {
+            msg.textContent = '⚠ Cookie expired — click Settings to update';
+        } else if (!data.has_cookie) {
+            msg.textContent = 'No cookie set';
+        } else {
+            msg.textContent = 'Cookie loaded, waiting for check…';
+        }
+
+        if (data.last_checked) {
+            const t = new Date(data.last_checked).toLocaleString();
+            msg.textContent += ` · Last checked: ${t}`;
+        }
+    } catch (e) {
+        // API not available (static mode)
+        document.getElementById('cookie-banner').style.display = 'none';
+    }
+}
+
+checkCookieStatus();
+setInterval(checkCookieStatus, 60_000); // Poll every minute
+
+// Dialog
+const overlay = document.getElementById('dialog-overlay');
+const openBtn = document.getElementById('open-settings');
+const cancelBtn = document.getElementById('dialog-cancel');
+const saveBtn = document.getElementById('dialog-save');
+const cookieInput = document.getElementById('cookie-input');
+const feedback = document.getElementById('dialog-feedback');
+
+openBtn.addEventListener('click', () => {
+    overlay.style.display = 'flex';
+    cookieInput.value = '';
+    feedback.textContent = '';
+    feedback.className = 'dialog-feedback';
+    cookieInput.focus();
+});
+
+cancelBtn.addEventListener('click', () => { overlay.style.display = 'none'; });
+overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.style.display = 'none'; });
+
+saveBtn.addEventListener('click', async () => {
+    const val = cookieInput.value.trim();
+    if (!val) {
+        feedback.textContent = 'Please paste a cookie value';
+        feedback.className = 'dialog-feedback error';
+        return;
+    }
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+
+    try {
+        const res = await fetch('/api/cookie', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ cookie: val }),
+        });
+        const data = await res.json();
+        if (res.ok) {
+            feedback.textContent = '✓ Cookie updated successfully';
+            feedback.className = 'dialog-feedback success';
+            setTimeout(() => { overlay.style.display = 'none'; checkCookieStatus(); }, 1200);
+        } else {
+            feedback.textContent = data.detail || 'Update failed';
+            feedback.className = 'dialog-feedback error';
+        }
+    } catch (e) {
+        feedback.textContent = 'Network error';
+        feedback.className = 'dialog-feedback error';
+    } finally {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save';
+    }
+});

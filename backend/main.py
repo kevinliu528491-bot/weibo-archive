@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 import sqlite3
 import json
@@ -6,6 +6,7 @@ import os
 import sys
 from pydantic import BaseModel
 from typing import List, Optional
+from datetime import datetime as _dt2
 
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -15,6 +16,38 @@ app = FastAPI(title="Weibo Scraper API")
 # Mount static files
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
+COOKIE_FILE = os.path.join(BASE_DIR, "cookie.txt")
+
+# ── Cookie state ──────────────────────────────────────────────
+_cookie_state = {
+    "cookie": "",
+    "status": "unknown",       # "ok" | "expired" | "unknown"
+    "last_updated": None,      # ISO timestamp of last cookie update
+    "last_checked": None,      # ISO timestamp of last scraper run
+}
+
+def _load_cookie():
+    """Load cookie from cookie.txt, falling back to env var."""
+    if os.path.exists(COOKIE_FILE):
+        with open(COOKIE_FILE, "r") as f:
+            val = f.read().strip()
+            if val:
+                _cookie_state["cookie"] = val
+                _cookie_state["last_updated"] = _dt2.fromtimestamp(os.path.getmtime(COOKIE_FILE)).isoformat()
+                return
+    env = os.getenv("WEIBO_COOKIE", "")
+    if env:
+        _cookie_state["cookie"] = env
+
+def _save_cookie(cookie_value: str):
+    """Persist cookie to cookie.txt and update runtime state."""
+    with open(COOKIE_FILE, "w") as f:
+        f.write(cookie_value)
+    _cookie_state["cookie"] = cookie_value
+    _cookie_state["status"] = "unknown"
+    _cookie_state["last_updated"] = _dt2.now().isoformat()
+
+_load_cookie()  # Load on import
 
 # API routes must act first
 # ... (API routes are defined below, but we must ensure static mount doesn't shadow them if we mount at root)
@@ -149,6 +182,29 @@ def get_stats():
     conn.close()
     return {"posts": post_count, "comments": comment_count}
 
+# ── Cookie management endpoints ──────────────────────────────
+class CookieUpdate(BaseModel):
+    cookie: str
+
+@app.get("/api/cookie-status")
+def get_cookie_status():
+    return {
+        "status": _cookie_state["status"],
+        "last_updated": _cookie_state["last_updated"],
+        "last_checked": _cookie_state["last_checked"],
+        "has_cookie": bool(_cookie_state["cookie"]),
+    }
+
+@app.post("/api/cookie")
+def update_cookie(body: CookieUpdate):
+    val = body.cookie.strip()
+    if not val:
+        raise HTTPException(status_code=400, detail="Cookie cannot be empty")
+    _save_cookie(val)
+    # Also update env var so scheduler thread picks it up
+    os.environ["WEIBO_COOKIE"] = val
+    return {"ok": True, "message": "Cookie updated"}
+
 import threading
 import schedule
 import time
@@ -164,9 +220,13 @@ def _log(msg):
     ts = _dt.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"[{ts}] Scheduler: {msg}", file=sys.stderr, flush=True)
 
+def _get_cookie():
+    """Get current cookie – prefer runtime state over env."""
+    return _cookie_state["cookie"] or os.getenv("WEIBO_COOKIE", "")
+
 def run_schedule():
     uid = os.getenv("WEIBO_UID")
-    cookie = os.getenv("WEIBO_COOKIE")
+    cookie = _get_cookie()
     if not uid or not cookie:
         _log("Missing UID or COOKIE, skipping.")
         return
@@ -174,7 +234,14 @@ def run_schedule():
     # Run once on startup
     _log("Running initial scrape...")
     try:
-        run_scraper(uid, cookie)
+        result = run_scraper(uid, cookie)
+        if result == "cookie_expired":
+            _cookie_state["status"] = "expired"
+            _cookie_state["last_checked"] = _dt2.now().isoformat()
+            _log("Cookie appears expired!")
+        else:
+            _cookie_state["status"] = "ok"
+            _cookie_state["last_checked"] = _dt2.now().isoformat()
         _log("Exporting static files...")
         export_stats()
         export_posts()
@@ -196,7 +263,15 @@ def run_schedule():
             if free_gb < 1.0:
                 _log("WARNING: Less than 1 GiB free. Skipping git sync but still scraping.")
 
-            run_scraper(uid=uid, cookie=cookie, days_back=3)
+            cookie = _get_cookie()  # re-read in case updated via UI
+            result = run_scraper(uid=uid, cookie=cookie, days_back=3)
+            if result == "cookie_expired":
+                _cookie_state["status"] = "expired"
+                _cookie_state["last_checked"] = _dt2.now().isoformat()
+                _log("Cookie appears expired!")
+            else:
+                _cookie_state["status"] = "ok"
+                _cookie_state["last_checked"] = _dt2.now().isoformat()
             _log("Exporting static files...")
             export_stats()
             export_posts()
