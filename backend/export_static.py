@@ -6,8 +6,9 @@ import requests
 import hashlib
 import time
 
-DB_PATH = "weibo_data.db"
-STATIC_DIR = "static"
+_BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(_BACKEND_DIR, "weibo_data.db")
+STATIC_DIR = os.path.join(_BACKEND_DIR, "static")
 
 def get_db_connection():
     conn = sqlite3.connect(DB_PATH, timeout=30)

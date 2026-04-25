@@ -9,7 +9,8 @@ from datetime import datetime, timedelta
 import pandas as pd
 
 # Configuration
-DB_PATH = "weibo_data.db"
+_BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_PATH = os.path.join(_BACKEND_DIR, "weibo_data.db")
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1",
     "Accept": "application/json, text/plain, */*",

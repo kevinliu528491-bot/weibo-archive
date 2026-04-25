@@ -89,7 +89,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-DB_PATH = "weibo_data.db"
+DB_PATH = os.path.join(BASE_DIR, "weibo_data.db")
 
 class Post(BaseModel):
     id: str
@@ -224,7 +224,31 @@ def _get_cookie():
     """Get current cookie – prefer runtime state over env."""
     return _cookie_state["cookie"] or os.getenv("WEIBO_COOKIE", "")
 
+def _do_scrape(uid, cookie, days_back=1):
+    """Run a single scrape + export + sync cycle."""
+    result = run_scraper(uid=uid, cookie=cookie, days_back=days_back)
+    if result == "cookie_expired":
+        _cookie_state["status"] = "expired"
+        _cookie_state["last_checked"] = _dt2.now().isoformat()
+        _log("Cookie appears expired!")
+    else:
+        _cookie_state["status"] = "ok"
+        _cookie_state["last_checked"] = _dt2.now().isoformat()
+    _log("Exporting static files...")
+    export_stats()
+    export_posts()
+
+    disk = shutil.disk_usage("/")
+    free_gb = disk.free / (1024**3)
+    _log(f"Disk free: {free_gb:.1f} GiB")
+    if free_gb >= 1.0:
+        sync_content()
+    else:
+        _log("Skipped git sync due to low disk space.")
+    return result
+
 def run_schedule():
+    """Main scheduler loop. Runs initial scrape, then schedules daily runs."""
     uid = os.getenv("WEIBO_UID")
     cookie = _get_cookie()
     if not uid or not cookie:
@@ -234,18 +258,7 @@ def run_schedule():
     # Run once on startup
     _log("Running initial scrape...")
     try:
-        result = run_scraper(uid, cookie)
-        if result == "cookie_expired":
-            _cookie_state["status"] = "expired"
-            _cookie_state["last_checked"] = _dt2.now().isoformat()
-            _log("Cookie appears expired!")
-        else:
-            _cookie_state["status"] = "ok"
-            _cookie_state["last_checked"] = _dt2.now().isoformat()
-        _log("Exporting static files...")
-        export_stats()
-        export_posts()
-        sync_content()  # Sync after initial scrape
+        _do_scrape(uid, cookie, days_back=1)
         _log("Initial scrape completed successfully.")
     except Exception as e:
         import traceback
@@ -256,31 +269,8 @@ def run_schedule():
     def run_wrapper():
         _log("=== Scheduled run starting ===")
         try:
-            # Check disk space before running
-            disk = shutil.disk_usage("/")
-            free_gb = disk.free / (1024**3)
-            _log(f"Disk free: {free_gb:.1f} GiB")
-            if free_gb < 1.0:
-                _log("WARNING: Less than 1 GiB free. Skipping git sync but still scraping.")
-
             cookie = _get_cookie()  # re-read in case updated via UI
-            result = run_scraper(uid=uid, cookie=cookie, days_back=3)
-            if result == "cookie_expired":
-                _cookie_state["status"] = "expired"
-                _cookie_state["last_checked"] = _dt2.now().isoformat()
-                _log("Cookie appears expired!")
-            else:
-                _cookie_state["status"] = "ok"
-                _cookie_state["last_checked"] = _dt2.now().isoformat()
-            _log("Exporting static files...")
-            export_stats()
-            export_posts()
-
-            if free_gb >= 1.0:
-                sync_content()
-            else:
-                _log("Skipped git sync due to low disk space.")
-
+            _do_scrape(uid, cookie, days_back=3)
             _log("=== Scheduled run completed successfully ===")
         except Exception as e:
             import traceback
@@ -290,7 +280,7 @@ def run_schedule():
     schedule.every().day.at("08:00").do(run_wrapper)
     schedule.every().day.at("12:00").do(run_wrapper)
     schedule.every().day.at("22:00").do(run_wrapper)
-    
+
     _log("Started. Running daily at 08:00, 12:00 and 22:00 with GitHub sync.")
     heartbeat_counter = 0
     while True:
@@ -303,14 +293,70 @@ def run_schedule():
         time.sleep(60)
         heartbeat_counter += 1
         if heartbeat_counter >= 30:  # Log heartbeat every 30 minutes
-            next_run = schedule.next_run()
-            _log(f"Heartbeat: alive. Next scheduled run: {next_run}")
+            try:
+                next_run = schedule.next_run()
+                _log(f"Heartbeat: alive. Next scheduled run: {next_run}")
+            except Exception:
+                _log("Heartbeat: alive. (could not determine next run)")
             heartbeat_counter = 0
+
+# ── Scheduler supervisor ──────────────────────────────────────
+# The supervisor thread monitors the scheduler thread and restarts
+# it automatically if it crashes, with exponential backoff.
+
+_scheduler_thread = None
+_scheduler_lock = threading.Lock()
+
+def _start_scheduler_thread():
+    """Start (or restart) the scheduler thread."""
+    global _scheduler_thread
+    with _scheduler_lock:
+        # Clear any existing schedule jobs to avoid duplicates on restart
+        schedule.clear()
+        _scheduler_thread = threading.Thread(
+            target=run_schedule, daemon=True, name="scheduler"
+        )
+        _scheduler_thread.start()
+        _log(f"Scheduler thread started (tid={_scheduler_thread.ident})")
+
+def _supervisor():
+    """Supervisor loop: watches the scheduler thread and restarts it if dead."""
+    restart_count = 0
+    max_backoff = 300  # 5 minutes max
+
+    # Wait for initial startup
+    time.sleep(5)
+
+    while True:
+        try:
+            with _scheduler_lock:
+                thread = _scheduler_thread
+
+            if thread is None or not thread.is_alive():
+                if thread is not None:
+                    restart_count += 1
+                    backoff = min(30 * restart_count, max_backoff)
+                    _log(f"⚠️  Scheduler thread DIED! Restart #{restart_count}, "
+                         f"waiting {backoff}s before restart...")
+                    time.sleep(backoff)
+                _log("Restarting scheduler thread...")
+                _start_scheduler_thread()
+            else:
+                # Thread is alive, reset restart count (successful period)
+                if restart_count > 0:
+                    restart_count = 0
+        except Exception as e:
+            _log(f"Supervisor error: {e}")
+
+        time.sleep(30)  # Check every 30 seconds
 
 @app.on_event("startup")
 def start_scheduler():
-    t = threading.Thread(target=run_schedule, daemon=True)
-    t.start()
+    _start_scheduler_thread()
+    # Start the supervisor that watches the scheduler
+    supervisor = threading.Thread(target=_supervisor, daemon=True, name="supervisor")
+    supervisor.start()
+    _log("Supervisor thread started.")
 
 if __name__ == "__main__":
     import uvicorn
