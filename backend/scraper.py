@@ -103,8 +103,12 @@ def get_long_text(post_id, cookie):
         print(f"Error fetching long text for {post_id}: {e}", file=sys.stderr)
     return None
 
-def get_posts(uid, container_id, cookie, page=1):
-    """Fetch posts for a user, supporting pagination."""
+def get_posts(uid, container_id, cookie, page=1, max_retries=3):
+    """Fetch posts for a user, supporting pagination.
+    
+    Retries up to max_retries times with exponential backoff when the API
+    returns non-JSON responses (common Weibo anti-scraping behaviour).
+    """
     url = "https://m.weibo.cn/api/container/getIndex"
     params = {
         "type": "uid",
@@ -115,26 +119,38 @@ def get_posts(uid, container_id, cookie, page=1):
     headers = HEADERS.copy()
     headers["Cookie"] = cookie
     
-    try:
-        print(f"Fetching page {page}...", file=sys.stderr)
-        response = requests.get(url, params=params, headers=headers)
-        response.raise_for_status()
-        data = response.json()
-        
-        if data.get("ok") == 1:
-            cards = data.get("data", {}).get("cards", [])
-            print(f"Success! Found {len(cards)} cards on page {page}.", file=sys.stderr)
-            return cards
-        else:
-            msg = data.get("msg", "")
-            print(f"Error fetching posts page {page}: {data}", file=sys.stderr)
-            # Detect common auth-failure signals
-            if "请先登录" in msg or "login" in msg.lower() or data.get("ok") == -100:
-                return "cookie_expired"
-            return []
-    except Exception as e:
-        print(f"Exception fetching posts: {e}", file=sys.stderr)
-        return []
+    for attempt in range(1, max_retries + 1):
+        try:
+            print(f"Fetching page {page} (attempt {attempt}/{max_retries})...", file=sys.stderr)
+            response = requests.get(url, params=params, headers=headers, timeout=30)
+            response.raise_for_status()
+            data = response.json()
+            
+            if data.get("ok") == 1:
+                cards = data.get("data", {}).get("cards", [])
+                print(f"Success! Found {len(cards)} cards on page {page}.", file=sys.stderr)
+                return cards
+            else:
+                msg = data.get("msg", "")
+                print(f"Error fetching posts page {page}: {data}", file=sys.stderr)
+                # Detect common auth-failure signals
+                if "请先登录" in msg or "login" in msg.lower() or data.get("ok") == -100:
+                    return "cookie_expired"
+                return []
+        except (ValueError, requests.exceptions.JSONDecodeError) as e:
+            # Non-JSON response – likely anti-scraping throttle
+            wait = 5 * attempt
+            print(f"Non-JSON response on page {page} attempt {attempt}: {e}. "
+                  f"Retrying in {wait}s...", file=sys.stderr)
+            time.sleep(wait)
+        except Exception as e:
+            wait = 5 * attempt
+            print(f"Exception fetching posts page {page} attempt {attempt}: {e}. "
+                  f"Retrying in {wait}s...", file=sys.stderr)
+            time.sleep(wait)
+
+    print(f"All {max_retries} attempts failed for page {page}.", file=sys.stderr)
+    return []
 
 def get_comments(post_id, cookie):
     """Fetch comments for a post."""
