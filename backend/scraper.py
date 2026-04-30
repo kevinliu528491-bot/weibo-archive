@@ -352,6 +352,12 @@ def run_scraper(uid, cookie, days_back=1):
                 else:
                     consecutive_old_posts = 0 # Reset counter if we find a new post
                 
+                # Skip posts containing "波浪理论详解" (book promo)
+                post_text = mblog.get("text", "")
+                if "波浪理论详解" in post_text:
+                    print(f"Skipping post with '波浪理论详解' ({created_at_str})", file=sys.stderr)
+                    continue
+                
                 pid = save_post(card, cookie)
                 if pid:
                     print(f"Processing post {pid} ({created_at_str})...", file=sys.stderr)
