@@ -10,8 +10,8 @@ from export_static import export_stats, export_posts
 def main():
     print(f"[{datetime.now()}] Weibo cron backup starting...")
     
-    # Try to get UID from env, fallback to default
-    uid = os.getenv("WEIBO_UID", "5187664653")
+    # Try to get UID from env, fallback to default (User's target blogger)
+    uid = os.getenv("WEIBO_UID", "1644724561")
     
     # Get cookie
     cookie = ""
