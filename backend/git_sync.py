@@ -7,10 +7,14 @@ import tempfile
 import glob
 
 # Minimum free disk space (GiB) required to run git sync
+from dotenv import load_dotenv
+load_dotenv()
+
 MIN_FREE_GB = 5.0
 
-# GitHub repo URL (used for fresh clones and gh-pages deploy)
-GITHUB_REPO = "https://github.com/kevinliu528491-bot/weibo-archive.git"
+# GitHub repo URL
+_token = os.getenv("GITHUB_TOKEN", "")
+GITHUB_REPO = f"https://{_token}@github.com/kevinliu528491-bot/weibo-archive.git" if _token else "https://github.com/kevinliu528491-bot/weibo-archive.git"
 
 # Git identity for commits
 GIT_USER_NAME = "kevinliu528491-bot"
@@ -197,6 +201,9 @@ def sync_content():
         )
         if result.stdout.strip():
              run_git_command(["git", "commit", "-m", commit_msg], cwd=repo_dir)
+             # Update origin URL with token and push main branch
+             run_git_command(["git", "remote", "set-url", "origin", GITHUB_REPO], cwd=repo_dir)
+             run_git_command(["git", "push", "origin", "main"], cwd=repo_dir)
         else:
              _log("No changes to commit.")
     except Exception as e:

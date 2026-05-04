@@ -11,3 +11,4 @@ manual_update*.log
 server_output*.log
 __pycache__/
 *.pyc
+.env
