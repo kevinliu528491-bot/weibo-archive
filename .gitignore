@@ -12,3 +12,6 @@ server_output*.log
 __pycache__/
 *.pyc
 .env
+.edge_key_cache
+backend/.edge_key_cache
+backend/cookie.txt
