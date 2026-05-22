@@ -207,8 +207,8 @@ def update_cookie(body: CookieUpdate):
 
 @app.on_event("startup")
 def start_scheduler():
-    _log("Viewer Server ready.")
-    _log("Note: Automated backups are now handled by system Cron.")
+    print("Viewer Server ready.")
+    print("Note: Automated backups are now handled by system Cron.")
 
 if __name__ == "__main__":
     import uvicorn
