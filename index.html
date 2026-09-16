@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="referrer" content="no-referrer">
+    <title>Weibo Monitor</title>
+    <link rel="stylesheet" href="./style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Cookie status banner -->
+    <div class="cookie-banner" id="cookie-banner">
+        <div class="cookie-banner-inner">
+            <span class="cookie-dot" id="cookie-dot"></span>
+            <span id="cookie-msg">Checking cookie…</span>
+            <button class="cookie-settings-btn" id="open-settings">⚙ Settings</button>
+        </div>
+    </div>
+
+    <!-- Settings dialog -->
+    <div class="dialog-overlay" id="dialog-overlay" style="display:none">
+        <div class="dialog">
+            <h2>Update Cookie</h2>
+            <p class="dialog-hint">Paste your Weibo <code>SUB=…</code> cookie below:</p>
+            <textarea id="cookie-input" rows="3" placeholder="SUB=_2A25..."></textarea>
+            <div class="dialog-actions">
+                <button class="btn-cancel" id="dialog-cancel">Cancel</button>
+                <button class="btn-save" id="dialog-save">Save</button>
+            </div>
+            <div class="dialog-feedback" id="dialog-feedback"></div>
+        </div>
+    </div>
+
+    <div class="container">
+        <header>
+            <h1>Weibo Monitor</h1>
+            <div class="stats" id="stats">
+                <span>Loading stats...</span>
+            </div>
+        </header>
+
+        <main id="timeline">
+            <!-- Posts will be injected here -->
+            <div class="loading">Loading posts...</div>
+        </main>
+    </div>
+
+    <script src="./app.js"></script>
+</body>
+
+</html>
