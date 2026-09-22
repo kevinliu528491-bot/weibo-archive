@@ -3,7 +3,7 @@ import os
 
 UID = "1644724561"
 # using the cookie from run.sh
-COOKIE = "SUB=_2A25Ef4PcDeRhGeBM6lIV8CbPzz6IHXVn9JkUrDV6PUJbktANLWmskW1NRQVR60_LzY0morLXZTBHxI9QKJZ9frqq"
+COOKIE = "SUB=_2A25HtaN2DeRhGeBM6lIV8CbPzz6IHXVkyrq-rDV6PUJbktANLRHlkW1NRQVR63F9Xc8s5CX_YCORd_wTLbkizVY4"
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 13_2_3 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/13.0.3 Mobile/15E148 Safari/604.1",
     "Accept": "application/json, text/plain, */*",
