@@ -193,7 +193,9 @@ def get_posts(uid, container_id, cookie, page=1, max_retries=5, session=None, ua
                 # Detect common auth-failure signals
                 if "请先登录" in msg or "login" in msg.lower() or data.get("ok") == -100:
                     return "cookie_expired"
-                return []
+                if msg in ("这里还没有内容", "暂无微博", "暂无内容"):
+                    return []
+                raise RuntimeError(f"Unexpected timeline response on page {page}: {msg}")
         except (ValueError, requests.exceptions.JSONDecodeError) as e:
             # Non-JSON response – likely anti-scraping throttle
             wait = 8 * attempt + random.uniform(0, 5)
