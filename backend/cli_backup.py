@@ -85,5 +85,6 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    from multi_archive import main as multi_main
+    multi_main()
 

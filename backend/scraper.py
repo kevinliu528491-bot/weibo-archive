@@ -207,7 +207,7 @@ def get_posts(uid, container_id, cookie, page=1, max_retries=5, session=None, ua
             time.sleep(wait)
 
     print(f"All {max_retries} attempts failed for page {page}.", file=sys.stderr)
-    return []
+    raise RuntimeError(f"Could not fetch page {page}; history checkpoint retained.")
 
 def get_comments(post_id, cookie, session=None, ua=None):
     """Fetch comments for a post."""
