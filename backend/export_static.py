@@ -158,6 +158,7 @@ def export_posts():
     
         # Update posts with local paths
         for i, post in enumerate(posts):
+            post.pop("raw_json", None)  # Cloudflare Pages 25MB limit: remove bulky unused raw_json
             img_list = post.pop("_image_urls", []) # Retrieve and remove temp
             if img_list is None:
                 img_list = []
