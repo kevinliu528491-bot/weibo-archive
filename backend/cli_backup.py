@@ -48,9 +48,10 @@ def main():
         print("❌ Error: No cookie available (Edge extraction failed + no cookie.txt)")
         sys.exit(1)
 
-    # 2. 抓取最近 3 天的帖子
-    print(f"Running scraper for uid={uid}...")
-    result = run_scraper(uid=uid, cookie=cookie, days_back=3)
+    # 2. 抓取帖子（支持环境变量 WEIBO_DAYS 自定义天数，默认 3 天）
+    days_back = int(os.getenv("WEIBO_DAYS", "3"))
+    print(f"Running scraper for uid={uid} (days_back={days_back})...")
+    result = run_scraper(uid=uid, cookie=cookie, days_back=days_back)
 
     if result == "cookie_expired":
         # Cookie 过期了，尝试重新从 Edge 提取一次
@@ -58,7 +59,7 @@ def main():
         fresh_cookie = refresh_cookie_file()
         if fresh_cookie:
             print("🔄 Got fresh cookie, retrying scrape...")
-            result = run_scraper(uid=uid, cookie=fresh_cookie, days_back=3)
+            result = run_scraper(uid=uid, cookie=fresh_cookie, days_back=days_back)
             if result == "cookie_expired":
                 print("❌ Fresh cookie also expired. Please re-login in Edge browser.")
                 sys.exit(1)
