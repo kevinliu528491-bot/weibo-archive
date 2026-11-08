@@ -90,6 +90,25 @@ def download_image(url):
     except Exception as e:
         print(f"\nError downloading {url}: {e}")
         
+    # Some Sina image hosts reject the Python HTTP client but allow the
+    # same public URL through the system client. Keep the original as fallback.
+    import subprocess
+    import tempfile
+    fd, tmp = tempfile.mkstemp(prefix=".image-", dir=images_dir)
+    os.close(fd)
+    try:
+        result = subprocess.run([
+            "curl", "-fsSL", "--max-time", "25", "-e", "https://weibo.com/",
+            "-A", "Mozilla/5.0", url, "-o", tmp, "-w", "%{content_type}"
+        ], capture_output=True, text=True, timeout=30)
+        if result.returncode == 0 and result.stdout.strip().startswith("image/") and os.path.getsize(tmp):
+            os.replace(tmp, local_path)
+            return relative_path
+    except (OSError, subprocess.TimeoutExpired):
+        pass
+    finally:
+        if os.path.exists(tmp):
+            os.unlink(tmp)
     return url # Return original URL if download fails
 
 def export_posts():
