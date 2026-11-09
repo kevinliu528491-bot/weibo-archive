@@ -123,9 +123,36 @@ def export_posts():
         # For each post, parse images JSON and fetch comments
         # Prepare list of all image URLs to download first
         all_image_jobs = []
+        from reposts import extract_original, walk_originals
+        cache_path = DB_PATH + '.original-text-cache.json'
+        try:
+            with open(cache_path, encoding='utf-8') as f:
+                original_cache = json.load(f)
+        except (OSError, ValueError):
+            original_cache = {}
+        cookie_path = os.path.join(_BACKEND_DIR, 'cookie.txt')
+        try:
+            with open(cookie_path, encoding='utf-8') as f:
+                cookie = f.read().strip()
+        except OSError:
+            cookie = ''
+        def resolve_long(pid):
+            if not cookie:
+                return None
+            from scraper import get_long_text
+            return get_long_text(pid, cookie)
         
         print("Preparing image download jobs...", end="\r")
         for post in posts:
+            try:
+                raw = json.loads(post.get('raw_json') or '{}')
+            except (TypeError, ValueError):
+                raw = {}
+            original = extract_original(raw, original_cache, resolve_long)
+            if original:
+                post['original_post'] = original
+                for item in walk_originals(post):
+                    all_image_jobs.extend(item.get('images', []))
             # Parse images
             if isinstance(post.get("images"), str):
                 try:
@@ -140,6 +167,9 @@ def export_posts():
                 for url in img_list:
                     all_image_jobs.append(url)
                     
+        with open(cache_path + '.tmp', 'w', encoding='utf-8') as f:
+            json.dump(original_cache, f, ensure_ascii=False)
+        os.replace(cache_path + '.tmp', cache_path)
         # Download images in parallel
         print(f"\nDownloading {len(all_image_jobs)} images with 10 threads...")
         from concurrent.futures import ThreadPoolExecutor
@@ -189,6 +219,8 @@ def export_posts():
                  else:
                      local_images.append(url) 
             post["images"] = local_images
+            for original in walk_originals(post):
+                original['images'] = [url_map.get(url, url) for url in original.get('images', [])]
             
             # Fetch comments for this post
             cursor.execute("SELECT * FROM comments WHERE post_id = ? ORDER BY id ASC", (post["id"],))

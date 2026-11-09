@@ -331,3 +331,26 @@ h1 {
 
 .dialog-feedback.success { color: #22c55e; }
 .dialog-feedback.error { color: #ef4444; }
+
+.original-post {
+    margin: 1.25rem 0;
+    padding: 1.15rem 1.25rem;
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--accent);
+    border-radius: .65rem;
+    background: rgba(8, 17, 32, .42);
+}
+.original-heading { display: flex; flex-wrap: wrap; align-items: center; gap: .65rem; }
+.original-heading a, .original-link, .original-content a { color: var(--accent); text-decoration: none; }
+.original-heading a:hover, .original-link:hover, .original-content a:hover { text-decoration: underline; }
+.original-label { color: var(--text-secondary); font-size: .75rem; letter-spacing: .08em; }
+.original-date { color: var(--text-secondary); font-size: .75rem; margin: .4rem 0 .8rem; }
+.original-content { overflow-wrap: anywhere; white-space: pre-wrap; font-size: .95rem; }
+.original-content img { max-width: 100%; }
+.original-link { display: inline-block; font-size: .8rem; margin-top: .75rem; }
+.original-notice { color: var(--text-secondary); font-size: .8rem; }
+@media (max-width: 600px) {
+    .container { padding: 1rem; }
+    header { flex-direction: column; align-items: flex-start; gap: .7rem; }
+    .original-post { padding: .9rem; }
+}

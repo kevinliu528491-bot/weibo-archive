@@ -89,8 +89,9 @@ def build_site():
         target.mkdir(parents=True, exist_ok=True)
         if uid == ACCOUNTS[0][0]:
             posts = json.loads((STATIC / 'posts.json').read_text())
+            from reposts import rebase_images
             for post in posts:
-                post['images'] = ['../' + p if p.startswith('images/') else p for p in post.get('images', [])]
+                rebase_images(post, '../')
             (target / 'posts.json').write_text(json.dumps(posts, ensure_ascii=False, separators=(',', ':')))
             (target / 'stats.json').write_bytes((STATIC / 'stats.json').read_bytes())
         stats_path = target / 'stats.json'

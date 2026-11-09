@@ -1,3 +1,72 @@
+function escapeHtml(value) {
+    return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+
+function safeUrl(value, base = location.href) {
+    try {
+        const url = new URL(value, base);
+        return ['http:', 'https:'].includes(url.protocol) ? url.href : '';
+    } catch (_) { return ''; }
+}
+
+function safeRichText(value) {
+    const template = document.createElement('template');
+    template.innerHTML = String(value ?? '');
+    const allowed = new Set(['A','IMG','BR','P','SPAN','STRONG','B','EM','I','DIV','UL','OL','LI','SUP','SUB']);
+    for (const element of template.content.querySelectorAll('*')) {
+        if (['SCRIPT','STYLE','IFRAME','OBJECT','EMBED','FORM','INPUT'].includes(element.tagName)) {
+            element.remove();
+            continue;
+        }
+        if (!allowed.has(element.tagName)) {
+            element.replaceWith(...element.childNodes);
+            continue;
+        }
+        const href = element.getAttribute('href');
+        const src = element.getAttribute('src');
+        const alt = element.getAttribute('alt');
+        for (const attribute of [...element.attributes]) element.removeAttribute(attribute.name);
+        if (element.tagName === 'A' && href) {
+            const url = safeUrl(href, 'https://weibo.com/');
+            if (url) { element.href = url; element.target = '_blank'; element.rel = 'noopener noreferrer'; }
+        }
+        if (element.tagName === 'IMG') {
+            const url = src && safeUrl(src, 'https://weibo.com/');
+            if (!url) { element.remove(); continue; }
+            element.src = url; element.alt = alt || ''; element.loading = 'lazy';
+        }
+    }
+    return template.innerHTML;
+}
+
+function renderArchiveImages(images) {
+    if (typeof images === 'string') {
+        try { images = JSON.parse(images); } catch (_) { images = []; }
+    }
+    const urls = (images || []).map(url => safeUrl(url)).filter(Boolean);
+    if (!urls.length) return '';
+    return `<div class="post-images">${urls.map(url => `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"><img src="${escapeHtml(url)}" alt="微博图片" loading="lazy"></a>`).join('')}</div>`;
+}
+
+function renderOriginal(original) {
+    if (!original) return '';
+    const author = escapeHtml(original.author_name || '原作者');
+    const authorUrl = original.author_id ? `https://weibo.com/u/${encodeURIComponent(original.author_id)}` : '';
+    const originalUrl = safeUrl(original.url);
+    const date = new Date(original.created_at);
+    const when = original.created_at ? (Number.isNaN(date.getTime()) ? original.created_at : date.toLocaleString()) : '';
+    return `<section class="original-post" data-original-id="${escapeHtml(original.id)}" aria-label="转发的原微博">
+        <div class="original-heading"><span class="original-label">原微博</span>${authorUrl ? `<a href="${authorUrl}" target="_blank" rel="noopener noreferrer">@${author}</a>` : `<span>@${author}</span>`}</div>
+        ${when ? `<div class="original-date">${escapeHtml(when)}</div>` : ''}
+        ${original.unavailable ? '<p class="original-notice">原微博已不可用，以下为已保存的信息。</p>' : ''}
+        <div class="original-content">${safeRichText(original.text)}</div>
+        ${renderArchiveImages(original.images)}
+        ${renderOriginal(original.original_post)}
+        ${original.truncated ? '<p class="original-notice">长文尚未完整获取，可查看原微博。</p>' : ''}
+        ${originalUrl ? `<a class="original-link" href="${escapeHtml(originalUrl)}" target="_blank" rel="noopener noreferrer">查看原微博 ↗</a>` : ''}
+    </section>`;
+}
+
 const API_BASE = '/api/';
 const STATIC_BASE = '.'; // Relative path for current directory
 
@@ -53,6 +122,7 @@ async function renderPosts() {
         for (const post of posts) {
             const card = document.createElement('div');
             card.className = 'post-card';
+            card.dataset.postId = String(post.id);
 
             // If comments are already included (static JSON), use them. 
             // Otherwise fetch from API.
@@ -68,41 +138,25 @@ async function renderPosts() {
                 }
             }
 
-            const commentsHtml = comments.length > 0
-                ? `<div class="comments-section">
-                    ${comments.map(renderComment).join('')}
-                   </div>`
-                : '';
+            const commentsHtml = comments.map(renderComment).join('');
 
             const date = new Date(post.created_at_ts * 1000).toLocaleString();
 
-            let imagesHtml = '';
-            // Handle both stringified images (from DB) and array images (from JSON)
-            let imgList = post.images;
-            if (typeof imgList === 'string') {
-                try { imgList = JSON.parse(imgList); } catch (e) { imgList = []; }
-            }
-
-            if (imgList && imgList.length > 0) {
-                imagesHtml = `<div class="post-images">
-                    ${imgList.map(img => `<a href="${img}" target="_blank"><img src="${img}" loading="lazy"></a>`).join('')}
-                </div>`;
-            }
+            const imagesHtml = renderArchiveImages(post.images);
 
             card.innerHTML = `
                 <div class="post-header">
                     <span class="post-date">${date}</span>
                 </div>
-                <div class="post-content">${post.text}</div>
+                <div class="post-content">${safeRichText(post.text)}</div>
                 ${imagesHtml}
+                ${renderOriginal(post.original_post)}
                 <div class="post-footer">
                     <span>Reposts: ${post.reposts_count}</span>
                     <span>Comments: ${post.comments_count}</span>
                     <span>Likes: ${post.attitudes_count}</span>
                 </div>
-                <div class="comments-section" id="comments-${post.id}">
-                    ${commentsHtml}
-                </div>
+                ${comments.length ? `<div class="comments-section" id="comments-${post.id}">${commentsHtml}</div>` : ''}
             `;
 
             timeline.appendChild(card);
@@ -116,12 +170,12 @@ async function renderPosts() {
 function renderComment(comment) {
     return `
         <div class="comment">
-            <div class="comment-user">@${comment.user_name}</div>
-            <div class="comment-text">${comment.text}</div>
+            <div class="comment-user">@${escapeHtml(comment.user_name)}</div>
+            <div class="comment-text">${safeRichText(comment.text)}</div>
             ${comment.reply_text ? `
                 <div class="reply-box">
                     <div class="reply-label">Blogger Replied:</div>
-                    <div class="reply-text">${comment.reply_text}</div>
+                    <div class="reply-text">${safeRichText(comment.reply_text)}</div>
                 </div>
             ` : ''}
         </div>
