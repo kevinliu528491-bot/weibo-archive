@@ -27,7 +27,7 @@ def _log(msg):
     ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print(f"[{ts}] git_sync: {msg}", file=sys.stderr, flush=True)
 
-def run_git_command(command, cwd):
+def run_git_command(command, cwd, timeout=120):
     """Runs a git command and prints output."""
     try:
         result = subprocess.run(
@@ -37,14 +37,14 @@ def run_git_command(command, cwd):
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
-            timeout=120  # 2 minute timeout to prevent hangs
+            timeout=timeout
         )
         _log(f"Success: {' '.join(command)}")
         if result.stdout:
             print(result.stdout)
         return True
     except subprocess.TimeoutExpired:
-        _log(f"TIMEOUT: {' '.join(command)} (killed after 120s)")
+        _log(f"TIMEOUT: {' '.join(command)} (killed after {timeout}s)")
         return False
     except subprocess.CalledProcessError as e:
         _log(f"Error running {' '.join(command)}: {e.stderr}")
@@ -133,7 +133,7 @@ def _deploy_gh_pages(base_dir):
         # Force push to gh-pages
         push_ok = run_git_command(
             ["git", "push", "--force", GITHUB_REPO, "gh-pages"],
-            cwd=tmp_dir
+            cwd=tmp_dir, timeout=900
         )
         if push_ok:
             _log("gh-pages deployed successfully.")
