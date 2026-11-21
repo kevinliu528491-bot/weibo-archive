@@ -54,7 +54,7 @@ function renderOriginal(original) {
     const authorUrl = original.author_id ? `https://weibo.com/u/${encodeURIComponent(original.author_id)}` : '';
     const originalUrl = safeUrl(original.url);
     const date = new Date(original.created_at);
-    const when = original.created_at ? (Number.isNaN(date.getTime()) ? original.created_at : date.toLocaleString()) : '';
+    const when = original.created_at ? (Number.isNaN(date.getTime()) ? original.created_at : date.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })) : '';
     return `<section class="original-post" data-original-id="${escapeHtml(original.id)}" aria-label="转发的原微博">
         <div class="original-heading"><span class="original-label">原微博</span>${authorUrl ? `<a href="${authorUrl}" target="_blank" rel="noopener noreferrer">@${author}</a>` : `<span>@${author}</span>`}</div>
         ${when ? `<div class="original-date">${escapeHtml(when)}</div>` : ''}
@@ -106,20 +106,7 @@ async function fetchStats() {
     }
 }
 
-async function renderPosts() {
-    const timeline = document.getElementById('timeline');
-    try {
-        // Fetch all posts (with nested comments if coming from static JSON)
-        const posts = await fetchWithFallback('posts', 'posts.json');
-
-        if (posts.length === 0) {
-            timeline.innerHTML = '<div class="loading">No posts found. Run the scraper first.</div>';
-            return;
-        }
-
-        timeline.innerHTML = '';
-
-        for (const post of posts) {
+async function createPostCard(post) {
             const card = document.createElement('div');
             card.className = 'post-card';
             card.dataset.postId = String(post.id);
@@ -140,7 +127,7 @@ async function renderPosts() {
 
             const commentsHtml = comments.map(renderComment).join('');
 
-            const date = new Date(post.created_at_ts * 1000).toLocaleString();
+            const date = new Date(post.created_at_ts * 1000).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
 
             const imagesHtml = renderArchiveImages(post.images);
 
@@ -159,11 +146,117 @@ async function renderPosts() {
                 ${comments.length ? `<div class="comments-section" id="comments-${post.id}">${commentsHtml}</div>` : ''}
             `;
 
-            timeline.appendChild(card);
+            return card;
+}
+
+function archiveText(post) {
+    const template = document.createElement('template');
+    let text = post.text || '';
+    for (let original = post.original_post; original; original = original.original_post) {
+        text += ' ' + original.author_name + ' ' + original.text;
+    }
+    for (const comment of post.comments || []) {
+        text += ' ' + comment.user_name + ' ' + comment.text + ' ' + (comment.reply_text || '');
+    }
+    template.innerHTML = text;
+    return (template.content.textContent || '').normalize('NFKC').toLocaleLowerCase();
+}
+
+function setupArchiveFilters(posts, timeline) {
+    const panel = document.createElement('section');
+    panel.className = 'archive-filters';
+    panel.setAttribute('aria-label', '查询博文');
+    panel.innerHTML = `
+        <div class="filter-controls">
+            <label class="search-label">搜索<input type="search" id="archive-search" placeholder="搜索博文、转发原文及评论" autocomplete="off"></label>
+            <label>年份<select id="archive-year" aria-label="年份"><option value="">全部年份</option></select></label>
+            <label>月份<select id="archive-month" aria-label="月份"><option value="">全部月份</option></select></label>
+            <button type="button" id="archive-reset">重置</button>
+        </div>
+        <p id="archive-results" role="status" aria-live="polite"></p>`;
+    timeline.before(panel);
+    const search = panel.querySelector('#archive-search');
+    const year = panel.querySelector('#archive-year');
+    const month = panel.querySelector('#archive-month');
+    const status = panel.querySelector('#archive-results');
+    const formatter = new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit'});
+    const index = posts.map(post => {
+        const parts = formatter.formatToParts(new Date(post.created_at_ts * 1000));
+        return {post, text:archiveText(post), year:parts.find(p=>p.type==='year').value, month:parts.find(p=>p.type==='month').value};
+    });
+    for (const value of [...new Set(index.map(row=>row.year))].sort().reverse()) {
+        year.add(new Option(value + '年', value));
+    }
+    const more = document.createElement('button');
+    more.type = 'button';
+    more.className = 'archive-more';
+    more.textContent = '加载更多';
+    timeline.after(more);
+    let matches = [];
+    let shown = 0;
+    let revision = 0;
+    let timer;
+
+    function updateMonths() {
+        const selected = month.value;
+        month.replaceChildren(new Option('全部月份', ''));
+        const months = [...new Set(index.filter(row=>!year.value || row.year===year.value).map(row=>row.month))].sort();
+        for (const value of months) month.add(new Option(Number(value) + '月', value));
+        if (months.includes(selected)) month.value = selected;
+    }
+
+    async function appendBatch(currentRevision) {
+        more.disabled = true;
+        const end = Math.min(shown + 40, matches.length);
+        const fragment = document.createDocumentFragment();
+        for (let i=shown; i<end; i++) {
+            const card = await createPostCard(matches[i].post);
+            if (currentRevision !== revision) return;
+            fragment.append(card);
         }
-    } catch (e) {
-        console.error('Failed to fetch posts', e);
-        timeline.innerHTML = '<div class="loading">Error loading posts. Ensure backend is running or posts.json exists.</div>';
+        timeline.append(fragment);
+        shown = end;
+        status.textContent = `找到 ${matches.length.toLocaleString()} 条博文，已显示 ${shown.toLocaleString()} 条 · 日期按北京时间`;
+        more.hidden = shown >= matches.length;
+        more.disabled = false;
+    }
+
+    async function filter() {
+        const currentRevision = ++revision;
+        const words = search.value.normalize('NFKC').trim().toLocaleLowerCase().split(/\s+/).filter(Boolean);
+        matches = index.filter(row=>(!year.value || row.year===year.value) && (!month.value || row.month===month.value) && words.every(word=>row.text.includes(word)));
+        shown = 0;
+        timeline.replaceChildren();
+        more.hidden = true;
+        if (!matches.length) {
+            status.textContent = '找到 0 条博文 · 日期按北京时间';
+            const empty = document.createElement('p');
+            empty.className = 'loading';
+            empty.textContent = '没有符合条件的博文，请调整关键词或年月。';
+            timeline.append(empty);
+            return;
+        }
+        await appendBatch(currentRevision);
+    }
+    search.addEventListener('input', ()=>{ clearTimeout(timer); timer=setTimeout(()=>filter(),180); });
+    year.addEventListener('change', ()=>{clearTimeout(timer);updateMonths();filter();});
+    month.addEventListener('change', ()=>{clearTimeout(timer);filter();});
+    panel.querySelector('#archive-reset').addEventListener('click', ()=>{
+        clearTimeout(timer); search.value=''; year.value=''; updateMonths(); month.value=''; filter();
+    });
+    more.addEventListener('click', ()=>appendBatch(revision));
+    updateMonths();
+    return filter();
+}
+
+async function renderPosts() {
+    const timeline = document.getElementById('timeline');
+    try {
+        const posts = await fetchWithFallback('posts', 'posts.json');
+        await setupArchiveFilters(posts, timeline);
+    } catch (error) {
+        console.error('Failed to load archive', error);
+        timeline.innerHTML = '<div class="loading">博文加载失败，请刷新页面重试。</div>';
     }
 }
 
