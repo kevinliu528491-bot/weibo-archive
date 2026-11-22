@@ -158,7 +158,9 @@ def sync_content():
     free_gb = disk.free / (1024**3)
     _log(f"Disk free: {free_gb:.1f} GiB (minimum: {MIN_FREE_GB} GiB)")
     if free_gb < MIN_FREE_GB:
-        _log(f"WARNING: Less than {MIN_FREE_GB} GiB free. Skipping git sync.")
+        _log(f"Less than {MIN_FREE_GB} GiB free; publishing changed static assets without a temporary archive copy.")
+        from pages_publish import deploy_static
+        deploy_static(os.path.join(PROJECT_ROOT, "backend", "static"))
         return
     
     _log("Starting GitHub sync...")

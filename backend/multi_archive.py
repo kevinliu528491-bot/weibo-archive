@@ -1,4 +1,4 @@
-"""Two-account archive; one export and Git deployment per scheduled run."""
+"""Multi-account archive; one export and Git deployment per scheduled run."""
 import argparse
 import contextlib
 import html
@@ -14,15 +14,15 @@ import subprocess
 
 BASE = Path(__file__).resolve().parent
 STATIC = BASE / 'static'
-ACCOUNTS = [('1644724561', '波浪理论学习'), ('1576218000', '李笑来')]
+ACCOUNTS = [('1644724561', '波浪理论学习'), ('1576218000', '李笑来'), ('7842045233', '波浪理论高中生')]
 
 
 def today():
     return datetime.now(ZoneInfo('America/Toronto')).date().isoformat()
 
 
-def history_state():
-    path = BASE / 'accounts' / ACCOUNTS[1][0] / 'backfill.json'
+def history_state(uid="1576218000"):
+    path = BASE / 'accounts' / uid / 'backfill.json'
     return json.loads(path.read_text()) if path.exists() else {'page': 1, 'complete': False}
 
 
@@ -97,8 +97,8 @@ def build_site():
         stats_path = target / 'stats.json'
         stats = json.loads(stats_path.read_text()) if stats_path.exists() else {'posts': 0, 'comments': 0}
         safe = html.escape(name)
-        pending = uid == ACCOUNTS[1][0] and not history_state()['complete']
-        status = '历史补全中 · 每天更新一次' if pending else ('每天更新一次' if uid == ACCOUNTS[1][0] else '每天更新三次')
+        pending = uid != ACCOUNTS[0][0] and not history_state(uid)['complete']
+        status = '历史补全中 · 每天更新一次' if pending else ('每天更新一次' if uid != ACCOUNTS[0][0] else '每天更新三次')
         # Static-only account pages deliberately do not include cookie-management controls.
         page = f'''<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>{safe} · 微博归档</title><link rel="stylesheet" href="../style.css"></head><body><div class="container"><nav style="margin:24px 0"><a href="../" style="color:#60a5fa">← 全部账号</a>　<a href="https://weibo.com/u/{uid}" target="_blank" rel="noopener" style="color:#94a3b8">微博原主页 ↗</a></nav><header><h1>{safe}</h1><div class="stats" id="stats">正在加载…</div></header><main id="timeline"><div class="loading">正在加载博文…</div></main></div><script src="../archive.js"></script></body></html>'''
         page = page.replace('<main id="timeline">', f'<p style="color:#94a3b8">{status}</p><main id="timeline">')
@@ -166,9 +166,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--backfill', action='store_true')
     parser.add_argument('--export-only', action='store_true')
+    parser.add_argument('--uid', choices=[uid for uid, _ in ACCOUNTS], default=ACCOUNTS[1][0])
     args = parser.parse_args()
     # A long history import does not block the first account's regular updates.
-    lock_name = '.backfill.lock' if args.backfill else '.archive.lock'
+    lock_name = ('.backfill.lock' if args.uid == ACCOUNTS[1][0] else f'.backfill-{args.uid}.lock') if args.backfill else '.archive.lock'
     with open(BASE / lock_name, 'a') as lock:
         try:
             fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -184,27 +185,28 @@ def main():
             if not cookie:
                 raise RuntimeError('No Weibo login cookie available.')
             if args.backfill:
-                backfill(ACCOUNTS[1][0], cookie)
-                stamps[ACCOUNTS[1][0]] = today()
+                backfill(args.uid, cookie)
+                stamps[args.uid] = today()
             else:
                 for uid, _ in ACCOUNTS:
-                    if uid == ACCOUNTS[1][0]:
-                        if lock_active(BASE / '.backfill.lock'):
-                            print('History import active; skipping duplicate second-account scrape.', flush=True)
+                    if uid != ACCOUNTS[0][0]:
+                        history_lock = BASE / ('.backfill.lock' if uid == ACCOUNTS[1][0] else f'.backfill-{uid}.lock')
+                        if lock_active(history_lock):
+                            print(f'History import active for {uid}; skipping duplicate scrape.', flush=True)
                             continue
-                        if not history_state()['complete']:
-                            with open(BASE / 'history-backfill.log', 'a') as log:
-                                subprocess.Popen([sys.executable, '-u', str(BASE / 'multi_archive.py'), '--backfill'], cwd=BASE, stdout=log, stderr=log, start_new_session=True)
-                            print('Resumed unfinished history import in background.', flush=True)
+                        if not history_state(uid)['complete']:
+                            with open(BASE / f'history-{uid}.log', 'a') as log:
+                                subprocess.Popen([sys.executable, '-u', str(BASE / 'multi_archive.py'), '--backfill', '--uid', uid], cwd=BASE, stdout=log, stderr=log, start_new_session=True)
+                            print(f'Resumed unfinished history import for {uid}.', flush=True)
                             continue
-                        if not second_due(stamps):
-                            print('Second account already updated today; skipping.', flush=True)
+                        if stamps.get(uid) == today():
+                            print(f'{uid} already updated today; skipping.', flush=True)
                             continue
                     with account_context(uid):
                         result = scraper.run_scraper(uid, cookie, days_back=int(os.getenv('WEIBO_DAYS', '3')))
                         if result == 'cookie_expired':
                             raise RuntimeError('Weibo login expired.')
-                    if uid == ACCOUNTS[1][0]:
+                    if uid != ACCOUNTS[0][0]:
                         stamps[uid] = today()
             stamp_path.parent.mkdir(parents=True, exist_ok=True)
             stamp_path.write_text(json.dumps(stamps))
