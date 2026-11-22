@@ -4,7 +4,6 @@ from datetime import datetime
 import shutil
 
 from scraper import run_scraper
-from git_sync import sync_content
 from export_static import export_stats, export_posts
 from auto_cookie import refresh_cookie_file
 
@@ -77,6 +76,7 @@ def main():
     free_gb = disk.free / (1024**3)
     print(f"Disk free: {free_gb:.1f} GiB")
     if free_gb >= 1.0:
+        from git_sync import sync_content
         sync_content()
     else:
         print("Skipped git sync due to low disk space.")

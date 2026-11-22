@@ -158,8 +158,8 @@ def publish():
         for uid, _ in ACCOUNTS:
             export_account(uid)
         build_site()
-        from git_sync import sync_content
-        sync_content()
+        from pages_publish import deploy_static
+        deploy_static(STATIC)
 
 
 def main():
